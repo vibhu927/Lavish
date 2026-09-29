@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Use SQLite for free-tier local dev (file:./dev.db). Swap to postgresql by changing provider+url when you add Neon/Supabase.
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("ADMIN") // ADMIN | EDITOR
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String? // url /uploads/...
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  isTopRated  Boolean   @default(false)
+  parentId    String?
+  parent      Category? @relation("CategoryParent", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryParent")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  shortDesc   String?
+  description String? // TipTap JSON or HTML
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  weight      String?  // e.g. "50ml", "100g"
+  ingredients String?
+  howToUse    String?
+  benefits    String?
+  isActive    Boolean  @default(true)
+  isTopRated  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  seoTitle    String?
+  seoDesc     String?
+
+  images      ProductImage[]
+  variants    ProductVariant[]
+  attributes  ProductAttribute[]
+  tags        ProductTag[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isTopRated])
+  @@index([sortOrder])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+  alt       String?
+
+  @@index([productId])
+  @@index([sortOrder])
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String // e.g. "Shade: Ruby Red" or "50ml"
+  sku       String? @unique
+  weight    String?
+  image     String? // variant image url
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+model ProductAttribute {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  key       String // e.g. "Skin Type", "Finish"
+  value     String // e.g. "All Skin Types", "Matte"
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+model Tag {
+  id       String       @id @default(cuid())
+  name     String       @unique
+  slug     String       @unique
+  products ProductTag[]
+  createdAt DateTime    @default(now())
+}
+
+model ProductTag {
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+}
+
+model Banner {
+  id         String   @id @default(cuid())
+  title      String
+  subtitle   String?
+  ctaText    String?
+  ctaLink    String?
+  desktopUrl String
+  mobileUrl  String?
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String? // TipTap JSON string or HTML
+  coverImage  String?
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  seoTitle    String?
+  seoDesc     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([isPublished])
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  productId String?
+  status    String   @default("NEW") // NEW | CONTACTED | RESOLVED
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WebsiteSettings {
+  id                      String @id @default("settings")
+  siteName                String @default("Leaf Organic")
+  logoUrl                 String?
+  faviconUrl              String?
+  defaultSeoTitle         String? @default("Leaf Organic — Pure Beauty, Naturally")
+  defaultSeoDesc          String? @default("Organic beauty & cosmetics by Leaf Organic.")
+  headerAnnouncement      String? @default("Free shipping on orders above ₹999")
+  headerQuote             String? @default("Pure Beauty, Naturally")
+  footerHeadline          String? @default("Leaf Organic")
+  footerDesc              String? @default("Handcrafted beauty with organic ingredients. Cruelty-free, sustainable, and made with love.")
+  address                 String? @default("123 Green Valley, New Delhi, India")
+  phone                   String? @default("+91 98765 43210")
+  email                   String? @default("hello@leaforganic.com")
+  gstNumber               String? @default("")
+  copyrightText           String? @default("© 2026 Leaf Organic. All rights reserved.")
+  businessHours           String? @default("Mon–Sat: 10am – 7pm")
+  mapEmbedUrl             String?
+  whatsappEnabled         Boolean @default(true)
+  whatsappNumber          String? @default("919876543210")
+  whatsappDefaultMsg      String? @default("Hi, I want to know more about your products.")
+  whatsappProductTemplate String? @default("Hi, I want more information about {productName} ({weight}) — {productUrl}")
+  blogEnabled             Boolean @default(true)
+  instagramUrl            String?
+  facebookUrl             String?
+  youtubeUrl              String?
+  linkedinUrl             String?
+  updatedAt               DateTime @updatedAt
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  url       String   @unique
+  filename  String
+  mimeType  String
+  size      Int
+  hash      String? // sha256
+  createdAt DateTime @default(now())
+
+  @@index([hash])
+}
