@@ -36,9 +36,13 @@ To move to a real database later, replace `src/lib/db/client.ts` and delete the 
 ```bash
 npm install
 cp .env.example .env          # then set AUTH_SECRET
-npm run db:seed               # sample products, categories, admin user
 npm run dev                   # http://localhost:3000
 ```
+
+That's it. There is no database to install, migrate, or seed by hand — the app
+reads and writes `data/*.json` directly. The first `npm run build` notices the
+folder is empty and fills it with starter content so the site isn't blank; on
+any later build it sees content already there and leaves it alone.
 
 - Public: `http://localhost:3000`
 - Admin: `http://localhost:3000/admin` (seed login: `admin@leaforganic.com` / `admin123`)
@@ -47,10 +51,16 @@ npm run dev                   # http://localhost:3000
 Other scripts:
 
 ```bash
-npm run db:reset   # wipe every data/*.json file back to empty
-npm run build      # production build
-npm start          # serve the production build
+npm run seed                                    # re-add starter content (won't overwrite)
+npm run reset                                   # empty every data/*.json file
+npm run admin -- you@example.com 'a-password'   # set/change the admin login
+npm run build                                   # production build
+npm start                                       # serve the production build
+npm run backup                                  # snapshot data/ + uploads/
 ```
+
+None of these talk to a database. `seed` and `reset` just write and empty JSON
+files.
 
 ## Configuration
 
@@ -60,7 +70,7 @@ npm start          # serve the production build
 | `NEXT_PUBLIC_SITE_URL` | yes in production | absolute origin, used by sitemap/robots/OG tags |
 | `DATA_DIR` | no | defaults to `./data` |
 | `UPLOAD_DIR` | no | defaults to `./uploads` |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | no | credentials created by `db:seed` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | no | credentials for `npm run seed` / `npm run admin` |
 
 Without `AUTH_SECRET` the app refuses to sign sessions and admin pages error out. This is deliberate — never ship with the dev default.
 
@@ -79,18 +89,30 @@ sudo -u leaf cp .env.example .env
 sudo -u leaf openssl rand -base64 32          # paste into AUTH_SECRET
 ```
 
-**2. Seed and build.** `data/` and `uploads/` are gitignored, so a fresh clone has no content:
+**2. Build.** Nothing to set up first — there is no database:
 
 ```bash
-sudo -u leaf npm run db:seed
 sudo -u leaf npm run build
 ```
 
-Set real admin credentials when seeding a public server:
+`data/` and `uploads/` are gitignored (the running server writes to them on
+every admin edit, so tracking them would break `git pull` on deploy). The build
+sees the empty folder, writes starter content, and carries on. It skips that
+step whenever content already exists, so rebuilds never overwrite a live site.
+
+The build creates `admin@leaforganic.com` / `admin123`. On a public server,
+change it right away:
 
 ```bash
-sudo -u leaf env ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-strong-password' npm run db:seed
+sudo -u leaf npm run admin -- you@example.com 'a-strong-password'
 ```
+
+> `npm run seed` never changes the password of an admin that already exists —
+> re-seeding a live site must not be able to lock you out. Use `npm run admin`
+> to set or change a password; it creates the admin if it doesn't exist. Both
+> read `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env` if you prefer, but those
+> scripts have to load `.env` themselves (plain `node`/`tsx` do not), so
+> passing the arguments is safer.
 
 **3. Run it under systemd**
 
@@ -124,7 +146,7 @@ sudo -u leaf npm run build
 sudo systemctl restart leaf-organic
 ```
 
-`data/` and `uploads/` are outside git, so pulling and rebuilding never touches live content.
+`data/` and `uploads/` are outside git, so pulling and rebuilding never touches live content. The build's auto-seed is a no-op once content exists.
 
 ## Backups
 
@@ -151,7 +173,7 @@ data/                     live JSON database (gitignored)
 uploads/                  live media store (gitignored)
 backups/                  snapshots from scripts/backup.mjs (gitignored)
 deploy/                   systemd unit + nginx site
-scripts/                  seed.ts, reset-data.mjs, backup.mjs
+scripts/                  seed / reset / admin / backup, run with npm run <name>
 src/
   app/                    routes; admin/ is the CMS, uploads/[...path] serves media
   components/
@@ -163,6 +185,7 @@ src/
 
 ## Notes / limits
 
+- **Locked out of the admin?** Run `npm run admin -- <email> '<new-password>'`. `npm run seed` will not reset it.
 - **Back up before you edit content in bulk.** The JSON files are the only copy.
 - Uploads are capped at 4.5 MB, image MIME types only, deduplicated by content hash.
 - Serving uploads through a route handler (rather than `public/`) is deliberate: `public/` is snapshotted at build time, so files added later would 404 until the next rebuild.

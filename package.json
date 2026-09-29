@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "admin": "tsx scripts/set-admin-password.ts",
+    "backup": "node scripts/backup.mjs",
+    "build": "tsx scripts/ensure-content.ts && next build",
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
     "lint": "eslint",
-    "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "node scripts/reset-data.mjs",
-    "backup": "node scripts/backup.mjs"
+    "reset": "node scripts/reset-data.mjs",
+    "seed": "tsx scripts/seed.ts",
+    "start": "next start"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
