@@ -1,11 +1,12 @@
 import { prisma } from "./prisma";
 
 export async function getSettings() {
-  let s = await prisma.websiteSettings.findUnique({ where: { id: "settings" } });
-  if (!s) {
-    s = await prisma.websiteSettings.create({
-      data: { id: "settings" },
-    });
-  }
-  return s;
+  // upsert, not find-then-create: several pages render in parallel and would
+  // otherwise all try to insert the singleton row, so all but one would fail
+  // on the unique constraint.
+  return prisma.websiteSettings.upsert({
+    where: { id: "settings" },
+    update: {},
+    create: { id: "settings" },
+  });
 }

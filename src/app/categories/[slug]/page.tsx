@@ -31,18 +31,10 @@ export default async function CategoryDetail({ params, searchParams }: { params:
   const page = Math.max(1, Number(sp.page || 1));
   const limit = 12;
 
-  const where: any = { isActive: true, categoryId: category.id };
-  if (q) where.name = { contains: q, mode: "insensitive" } as any;
-  // SQLite doesn't support mode insensitive, fallback to contains
-  // We'll adjust for sqlite: use contains via raw? For now simple.
-
-  // For sqlite, we can't use mode; so we handle via SQL filter manually if needed. Keep simple.
-
   let orderBy: any = { createdAt: "desc" };
   if (sort === "name") orderBy = { name: "asc" };
   if (sort === "order") orderBy = { sortOrder: "asc" };
 
-  // Fetch all then filter for sqlite compatibility (small dataset)
   let products = await prisma.product.findMany({ where: { isActive: true, categoryId: category.id }, orderBy, include: { category: true, images: true, tags: { include: { tag: true } } } });
   if (q) {
     const lower = q.toLowerCase();

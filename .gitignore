@@ -30,19 +30,23 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files - keep the real ones out, but commit the template
 .env*
+!.env.example
 
 # vercel
 .vercel
 
-# prisma
-prisma/dev.db
-prisma/dev.db-journal
+# JSON data layer - mutable content, never deploy-clobbered.
+# Back this up (scripts/backup.mjs); it is the live database.
+/data/*.json
 
-# uploads (local FS - ephemeral on Vercel, keep placeholder)
-public/uploads/* 
-!public/uploads/.gitkeep
+# uploaded media - the live media store, never in git
+/uploads/*
+!/uploads/.gitkeep
+
+# local backups from scripts/backup.mjs
+/backups/
 
 # typescript
 *.tsbuildinfo

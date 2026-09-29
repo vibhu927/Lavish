@@ -1,13 +1,18 @@
-import { PrismaClient } from "@prisma/client";
+import { db } from "../src/lib/db/client";
 import bcrypt from "bcryptjs";
-const prisma = new PrismaClient();
+
+const prisma = db;
+
+// Override on a live server: ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run db:seed
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@leaforganic.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
 async function main() {
-  const hash = await bcrypt.hash("admin123", 10);
+  const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
   await prisma.adminUser.upsert({
-    where: { email: "admin@leaforganic.com" },
+    where: { email: ADMIN_EMAIL.toLowerCase() },
     update: {},
-    create: { email: "admin@leaforganic.com", name: "Admin", passwordHash: hash, role: "ADMIN" },
+    create: { email: ADMIN_EMAIL.toLowerCase(), name: "Admin", passwordHash: hash, role: "ADMIN" },
   });
 
   await prisma.websiteSettings.upsert({
@@ -89,7 +94,19 @@ async function main() {
   const lipCat = await prisma.category.findUnique({ where: { slug: "lip-care" } });
   const allTags = await prisma.tag.findMany();
 
-  const productsData = [
+  type SeedProduct = {
+    name: string;
+    slug: string;
+    shortDesc: string;
+    weight: string;
+    categoryId: string;
+    isTopRated?: boolean;
+    attributes?: { key: string; value: string }[];
+    images: string[];
+    variants: { name: string; weight: string }[];
+  };
+
+  const productsData: SeedProduct[] = [
     {
       name: "Rose & Saffron Glow Serum",
       slug: "rose-saffron-glow-serum",
@@ -157,7 +174,7 @@ async function main() {
         ingredients: "Rosehip Oil, Saffron Extract, Aloe Vera, Vitamin E",
         howToUse: "Apply 2-3 drops on clean skin, morning & night. Gently massage.",
         benefits: "Boosts glow, evens tone, hydrates deeply.",
-        isTopRated: (p as any).isTopRated ?? false,
+        isTopRated: p.isTopRated ?? false,
         sortOrder: 0,
       },
     });
@@ -166,10 +183,10 @@ async function main() {
         data: { productId: prod.id, url: p.images[i], sortOrder: i, isPrimary: i === 0 },
       });
     }
-    for (const a of (p as any).attributes ?? []) {
+    for (const a of p.attributes ?? []) {
       await prisma.productAttribute.create({ data: { productId: prod.id, key: a.key, value: a.value } });
     }
-    for (const v of (p as any).variants ?? []) {
+    for (const v of p.variants ?? []) {
       await prisma.productVariant.create({ data: { productId: prod.id, name: v.name, weight: v.weight } });
     }
     // attach 2 random tags
@@ -209,7 +226,7 @@ async function main() {
     },
   });
 
-  console.log("Seed done. Admin: admin@leaforganic.com / admin123");
+  console.log(`Seed done. Admin: ${ADMIN_EMAIL.toLowerCase()}`);
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

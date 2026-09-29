@@ -1,9 +1,30 @@
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { createHmac, timingSafeEqual } from "crypto";
+import { cookies, headers } from "next/headers";
 
 const SESSION_COOKIE = "leaf_admin_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+function secret(): string {
+  const value = process.env.AUTH_SECRET;
+  if (!value || value.length < 16) {
+    throw new Error("AUTH_SECRET must be set (16+ chars). Add it to .env on the server.");
+  }
+  return value;
+}
+
+/** HMAC over the payload, so a cookie cannot be forged without the server secret. */
+function sign(payload: string): string {
+  return createHmac("sha256", secret()).update(payload).digest("base64url");
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 export async function verifyAdmin(email: string, password: string) {
   const user = await prisma.adminUser.findUnique({ where: { email: email.toLowerCase() } });
@@ -14,13 +35,19 @@ export async function verifyAdmin(email: string, password: string) {
 }
 
 export async function createSession(userId: string) {
-  const token = Buffer.from(`${userId}:${Date.now()}:${Math.random()}`).toString("base64url");
-  // store token as simple cookie value; validate by lookup
-  // For file-only demo we store session in cookie as userId|token and validate existence
+  const expiresAt = Date.now() + MAX_AGE * 1000;
+  const payload = `${userId}.${expiresAt}`;
+  const value = `${payload}.${sign(payload)}`;
+
+  // A `Secure` cookie is silently dropped over plain HTTP, which would send
+  // the admin straight back to the login form, so key it off the real protocol.
+  const h = await headers();
+  const isHttps = h.get("x-forwarded-proto") === "https";
+
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, `${userId}.${token}`, {
+  cookieStore.set(SESSION_COOKIE, value, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,
@@ -36,10 +63,15 @@ export async function getSessionUser() {
   const cookieStore = await cookies();
   const val = cookieStore.get(SESSION_COOKIE)?.value;
   if (!val) return null;
-  const [userId] = val.split(".");
-  if (!userId) return null;
-  const user = await prisma.adminUser.findUnique({ where: { id: userId } });
-  return user;
+
+  const parts = val.split(".");
+  if (parts.length !== 3) return null;
+  const [userId, expiresAt, signature] = parts;
+
+  if (!safeEqual(signature, sign(`${userId}.${expiresAt}`))) return null;
+  if (!Number.isFinite(Number(expiresAt)) || Number(expiresAt) < Date.now()) return null;
+
+  return prisma.adminUser.findUnique({ where: { id: userId } });
 }
 
 export async function requireAdmin() {

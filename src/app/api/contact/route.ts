@@ -16,7 +16,12 @@ function rateLimited(ip: string) {
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || "local";
   if (rateLimited(ip)) return NextResponse.json({ error: "Too many requests. Try later." }, { status: 429 });
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = contactSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Validation failed", issues: parsed.error.issues }, { status: 400 });
   const sub = await prisma.contactSubmission.create({

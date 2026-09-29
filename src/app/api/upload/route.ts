@@ -12,7 +12,8 @@ export async function POST(req: NextRequest) {
   try {
     const { url } = await localMediaStorage.save(file, folder);
     return NextResponse.json({ url });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Upload failed";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

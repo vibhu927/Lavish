@@ -38,7 +38,7 @@ export default async function AdminMedia() {
             if(d.url) setTimeout(()=>location.reload(),800);
           });
         `}} />
-        <p className="text-xs text-zinc-400 mt-2">Stored at <code>public/uploads/*</code> (local FS). Max 4.5MB, jpg/png/webp/avif. Dedup by hash.</p>
+        <p className="text-xs text-zinc-400 mt-2">Stored in <code>uploads/</code> outside <code>public/</code>, served live by the app. Max 4.5MB, jpg/png/webp/avif. Dedup by hash.</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">

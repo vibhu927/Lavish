@@ -1,0 +1,33 @@
+[Unit]
+Description=Leaf Organic (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=leaf
+Group=leaf
+WorkingDirectory=/srv/leaf-organic
+
+# Keep secrets out of the unit file.
+EnvironmentFile=/srv/leaf-organic/.env
+
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p 3000
+Restart=always
+RestartSec=5
+
+# data/ and uploads/ are the live database and media store.
+# They live inside the app dir and are NOT in git, so a `git pull`
+# deploy will not touch them.
+ReadWritePaths=/srv/leaf-organic/data /srv/leaf-organic/uploads
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=leaf-organic
+
+[Install]
+WantedBy=multi-user.target
