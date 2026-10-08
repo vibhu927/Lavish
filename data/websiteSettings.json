@@ -1,0 +1,31 @@
+[
+  {
+    "id": "settings",
+    "siteName": "Leaf Organic",
+    "logoUrl": null,
+    "faviconUrl": null,
+    "defaultSeoTitle": "Leaf Organic — Pure Beauty, Naturally",
+    "defaultSeoDesc": "Organic beauty & cosmetics by Leaf Organic.",
+    "headerAnnouncement": "Free shipping on orders above ₹999 — Pan India",
+    "headerQuote": "Pure Beauty, Naturally",
+    "footerHeadline": "Leaf Organic",
+    "footerDesc": "Handcrafted beauty with organic ingredients. Cruelty-free, sustainable, and made with love in India.",
+    "address": "12 Green Valley, Shahpur Jat, New Delhi 110049",
+    "phone": "+91 98765 43210",
+    "email": "hello@leaforganic.com",
+    "gstNumber": "07ABCDE1234F1Z5",
+    "copyrightText": "© 2026 Leaf Organic. Crafted with care.",
+    "businessHours": "Mon–Sat: 10am – 7pm IST",
+    "mapEmbedUrl": null,
+    "whatsappEnabled": true,
+    "whatsappNumber": "919876543210",
+    "whatsappDefaultMsg": "Hi, I want to know more about your products.",
+    "whatsappProductTemplate": "Hi, I want more information about {productName} ({weight}) — {productUrl}",
+    "blogEnabled": true,
+    "instagramUrl": "https://instagram.com",
+    "facebookUrl": "https://facebook.com",
+    "youtubeUrl": "https://youtube.com",
+    "linkedinUrl": null,
+    "updatedAt": "2026-09-29T19:11:28.580Z"
+  }
+]

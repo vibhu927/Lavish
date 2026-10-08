@@ -4,6 +4,8 @@ import { modelDef, newId } from "./models";
 
 export type Row = Record<string, unknown>;
 
+// Disk-only by design (portfolio-style): content JSON lives in the repo and
+// is published with `git push`. No database, no storage service.
 const DATA_DIR = process.env.DATA_DIR
   ? path.resolve(process.env.DATA_DIR)
   : path.join(process.cwd(), "data");
@@ -28,6 +30,17 @@ function cloneRows(rows: Row[]): Row[] {
   return rows.map((r) => ({ ...r }));
 }
 
+function parseRows(model: string, text: string): Row[] | null {
+  let parsed: Row[];
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed)) return null;
+  return parsed.map((r) => revive(model, r));
+}
+
 export async function readAll(model: string): Promise<Row[]> {
   const file = fileFor(model);
   let mtimeMs = 0;
@@ -43,14 +56,14 @@ export async function readAll(model: string): Promise<Row[]> {
   const hit = cache.get(model);
   if (hit && hit.mtimeMs === mtimeMs && hit.size === size) return cloneRows(hit.rows);
 
-  let parsed: Row[];
+  let text: string;
   try {
-    parsed = JSON.parse(await fs.readFile(file, "utf8"));
+    text = await fs.readFile(file, "utf8");
   } catch {
     return [];
   }
-  if (!Array.isArray(parsed)) return [];
-  const rows = parsed.map((r) => revive(model, r));
+  const rows = parseRows(model, text);
+  if (!rows) return [];
   cache.set(model, { mtimeMs, size, rows });
   return cloneRows(rows);
 }
@@ -129,10 +142,13 @@ export async function writeAll(model: string, rows: Row[]): Promise<void> {
       warnedEphemeral = true;
       console.error(
         `[store] write failed on ephemeral host (${hint}). ` +
-          `JSON files do not persist on serverless — use a VPS with a persistent disk. ${where}`,
+          `Content is published via git push in this project — edit on localhost, commit, push. ${where}`,
       );
     }
-    throw new Error(`Failed to save ${model} (${where}): ${e instanceof Error ? e.message : String(e)}`);
+    const suffix = hint
+      ? " (This live server cannot save: edit on localhost, then commit + push to publish.)"
+      : "";
+    throw new Error(`Failed to save ${model} (${where}): ${e instanceof Error ? e.message : String(e)}${suffix}`);
   }
   // Refresh the cache from the file we just wrote (not from the caller's
   // array) so the next read compares against the true post-write mtime+size

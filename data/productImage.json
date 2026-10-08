@@ -1,0 +1,42 @@
+[
+  {
+    "id": "cmun1x2k26el1kib7uji5",
+    "productId": "cmun1x2k2bm6pcqknw74j",
+    "url": "/uploads/products/serum1.jpg",
+    "sortOrder": 0,
+    "isPrimary": true,
+    "alt": null,
+    "createdAt": "2026-09-29T19:10:24.818Z",
+    "updatedAt": "2026-09-29T19:10:24.818Z"
+  },
+  {
+    "id": "cmun1x2k4v0urw4xs268m",
+    "productId": "cmun1x2k4xs0n3vncsmb7",
+    "url": "/uploads/products/cleanser1.jpg",
+    "sortOrder": 0,
+    "isPrimary": true,
+    "alt": null,
+    "createdAt": "2026-09-29T19:10:24.820Z",
+    "updatedAt": "2026-09-29T19:10:24.820Z"
+  },
+  {
+    "id": "cmun1x2k5qve8t6j8m06l",
+    "productId": "cmun1x2k5g0qejal1yeey",
+    "url": "/uploads/products/hairoil1.jpg",
+    "sortOrder": 0,
+    "isPrimary": true,
+    "alt": null,
+    "createdAt": "2026-09-29T19:10:24.821Z",
+    "updatedAt": "2026-09-29T19:10:24.821Z"
+  },
+  {
+    "id": "cmun1x2k7fhzkuz257kpj",
+    "productId": "cmun1x2k75w5msad5h5ca",
+    "url": "/uploads/products/liptint1.jpg",
+    "sortOrder": 0,
+    "isPrimary": true,
+    "alt": null,
+    "createdAt": "2026-09-29T19:10:24.823Z",
+    "updatedAt": "2026-09-29T19:10:24.823Z"
+  }
+]

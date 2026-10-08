@@ -1,0 +1,29 @@
+[
+  {
+    "id": "cmun1x2k2dew4bb075t3c",
+    "productId": "cmun1x2k2bm6pcqknw74j",
+    "key": "Skin Type",
+    "value": "All Skin Types",
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.818Z",
+    "updatedAt": "2026-09-29T19:10:24.818Z"
+  },
+  {
+    "id": "cmun1x2k3gbx9nxfcbj8q",
+    "productId": "cmun1x2k2bm6pcqknw74j",
+    "key": "Finish",
+    "value": "Dewy",
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.819Z",
+    "updatedAt": "2026-09-29T19:10:24.819Z"
+  },
+  {
+    "id": "cmun1x2k4oxl5x7m993ik",
+    "productId": "cmun1x2k4xs0n3vncsmb7",
+    "key": "Concern",
+    "value": "Acne & Oily Skin",
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.820Z",
+    "updatedAt": "2026-09-29T19:10:24.820Z"
+  }
+]

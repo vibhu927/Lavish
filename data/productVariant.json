@@ -1,0 +1,86 @@
+[
+  {
+    "id": "cmun1x2k3b8c1gypyl5wr",
+    "productId": "cmun1x2k2bm6pcqknw74j",
+    "name": "30ml",
+    "sku": null,
+    "weight": "30ml",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.819Z",
+    "updatedAt": "2026-09-29T19:10:24.819Z"
+  },
+  {
+    "id": "cmun1x2k3qtw0ilraqt0q",
+    "productId": "cmun1x2k2bm6pcqknw74j",
+    "name": "50ml",
+    "sku": null,
+    "weight": "50ml",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.819Z",
+    "updatedAt": "2026-09-29T19:10:24.819Z"
+  },
+  {
+    "id": "cmun1x2k6548s8ps5xf5c",
+    "productId": "cmun1x2k5g0qejal1yeey",
+    "name": "100ml",
+    "sku": null,
+    "weight": "100ml",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.822Z",
+    "updatedAt": "2026-09-29T19:10:24.822Z"
+  },
+  {
+    "id": "cmun1x2k6bzagwpqc8u1z",
+    "productId": "cmun1x2k5g0qejal1yeey",
+    "name": "200ml",
+    "sku": null,
+    "weight": "200ml",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.822Z",
+    "updatedAt": "2026-09-29T19:10:24.822Z"
+  },
+  {
+    "id": "cmun1x2k8hxufn5vk8jxi",
+    "productId": "cmun1x2k75w5msad5h5ca",
+    "name": "Rose Pink",
+    "sku": null,
+    "weight": "8g",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.824Z",
+    "updatedAt": "2026-09-29T19:10:24.824Z"
+  },
+  {
+    "id": "cmun1x2k8bwv856mgc705",
+    "productId": "cmun1x2k75w5msad5h5ca",
+    "name": "Berry Red",
+    "sku": null,
+    "weight": "8g",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.824Z",
+    "updatedAt": "2026-09-29T19:10:24.824Z"
+  },
+  {
+    "id": "cmun1x2k8fqnrhe4nk3q3",
+    "productId": "cmun1x2k75w5msad5h5ca",
+    "name": "Coral Peach",
+    "sku": null,
+    "weight": "8g",
+    "image": null,
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-09-29T19:10:24.824Z",
+    "updatedAt": "2026-09-29T19:10:24.824Z"
+  }
+]

@@ -37,13 +37,14 @@ yarn-error.log*
 # vercel
 .vercel
 
-# JSON data layer - mutable content, never deploy-clobbered.
-# Back this up (scripts/backup.mjs); it is the live database.
-/data/*.json
-
-# uploaded media - the live media store, never in git
-/uploads/*
-!/uploads/.gitkeep
+# Content database IS tracked in git (publish-by-push, portfolio-style):
+# edit on localhost, commit data/ + uploads/, push — Vercel rebuilds live.
+# NEVER commit the admin login: it is seeded from ADMIN_EMAIL/ADMIN_PASSWORD
+# at build time (see .env.example). Also ignore write probes + crash tmp.
+data/adminUser.json
+data/*.tmp
+data/.write-test.*
+uploads/.write-test.*
 
 # local backups from scripts/backup.mjs
 /backups/

@@ -6,10 +6,17 @@ import { cookies, headers } from "next/headers";
 const SESSION_COOKIE = "leaf_admin_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+export function isAuthConfigured(): boolean {
+  const value = process.env.AUTH_SECRET;
+  return !!value && value.length >= 16;
+}
+
 function secret(): string {
   const value = process.env.AUTH_SECRET;
   if (!value || value.length < 16) {
-    throw new Error("AUTH_SECRET must be set (16+ chars). Add it to .env on the server.");
+    throw new Error(
+      "AUTH_SECRET must be set (16+ chars). On Vercel: dashboard → Settings → Environment Variables → add AUTH_SECRET, then redeploy.",
+    );
   }
   return value;
 }
@@ -60,6 +67,11 @@ export async function destroySession() {
 }
 
 export async function getSessionUser() {
+  // Never throw from here: admin pages call this on every render, and a
+  // missing AUTH_SECRET would otherwise crash the whole page with the
+  // production-hidden "Server Components render" red box. Return null so the
+  // page redirects to /admin/login, where the config error is shown plainly.
+  if (!isAuthConfigured()) return null;
   const cookieStore = await cookies();
   const val = cookieStore.get(SESSION_COOKIE)?.value;
   if (!val) return null;
@@ -68,7 +80,13 @@ export async function getSessionUser() {
   if (parts.length !== 3) return null;
   const [userId, expiresAt, signature] = parts;
 
-  if (!safeEqual(signature, sign(`${userId}.${expiresAt}`))) return null;
+  let expected: string;
+  try {
+    expected = sign(`${userId}.${expiresAt}`);
+  } catch {
+    return null;
+  }
+  if (!safeEqual(signature, expected)) return null;
   if (!Number.isFinite(Number(expiresAt)) || Number(expiresAt) < Date.now()) return null;
 
   return prisma.adminUser.findUnique({ where: { id: userId } });

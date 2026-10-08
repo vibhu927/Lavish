@@ -1,6 +1,6 @@
 # Leaf Organic — Product Catalogue (CMS)
 
-Beauty / cosmetics catalogue — **not** a checkout store. Built with **Next.js 16** and **Tailwind 4**, with a JSON-file data layer and local file storage, deployed on a **VPS**.
+Beauty / cosmetics catalogue — **not** a checkout store. Built with **Next.js 16** and **Tailwind 4**, with a JSON-file data layer and local file storage, deployed on **Vercel** (publish-by-push, no database or storage service).
 
 Brand colors: `#9CB080` (sage) • `#618764` (leaf) • `#2B5748` (teal) • `#273338` (charcoal). Typography: `Cormorant Garamond` (display) + `Inter` (body).
 
@@ -10,9 +10,15 @@ Brand colors: `#9CB080` (sage) • `#618764` (leaf) • `#2B5748` (teal) • `#2
 - Media: `src/lib/media.ts` `MediaStorage` interface (`LocalFsAdapter`) — swap to S3/R2 by changing one file.
 - Auth: signed cookie session (`bcryptjs` + HMAC-SHA256), middleware protects `/admin/*`.
 
-## Why not Vercel?
+## How publishing works (Vercel, no extra services)
 
-This app **writes to its own filesystem at runtime**: every content change is a JSON write, and every upload is a file on disk. Vercel's filesystem is read-only and ephemeral, so both the database and all media vanish on redeploy. The app now targets a VPS with a persistent disk.
+Content JSON (`data/`) and photos (`uploads/`) are **committed to git** — same as a portfolio site. There is no database and no storage service.
+
+1. Edit on `localhost:3000/admin` (saves to `data/` + `uploads/` on your laptop).
+2. `git add data uploads && git commit -m "..." && git push`.
+3. Vercel rebuilds — the live site shows the new content (`outputFileTracingIncludes` in `next.config.ts` makes sure the files are bundled).
+
+> **Never edit on the live URL.** Vercel's filesystem is read-only and ephemeral: saves there fail with an honest error, and anything that looks saved vanishes on refresh. The admin, uploads and contact form all say so when it happens. Same rule applies to the contact/enquiries inbox — live enquiries can't be stored on Vercel, so the form tells visitors to use WhatsApp/phone instead. (Want a true live CMS where edits save on the server itself? Host on a VPS — see below. The code supports both; nothing else changes.)
 
 ## Data layer
 
@@ -46,7 +52,7 @@ any later build it sees content already there and leaves it alone.
 
 - Public: `http://localhost:3000`
 - Admin: `http://localhost:3000/admin` (seed login: `admin@leaforganic.com` / `admin123`)
-- Uploads: `uploads/*` (gitignored)
+- Uploads: `uploads/*` (**tracked in git** — commit them to publish)
 
 Other scripts:
 
@@ -70,11 +76,22 @@ files.
 | `NEXT_PUBLIC_SITE_URL` | yes in production | absolute origin, used by sitemap/robots/OG tags |
 | `DATA_DIR` | no | defaults to `./data` |
 | `UPLOAD_DIR` | no | defaults to `./uploads` |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | no | credentials for `npm run seed` / `npm run admin` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | **yes on Vercel** | the build seeds the admin login from these (`data/adminUser.json` is gitignored and never committed) |
 
 Without `AUTH_SECRET` the app refuses to sign sessions and admin pages error out. This is deliberate — never ship with the dev default.
 
-## Deploy to a VPS
+## Deploy to Vercel (primary)
+
+1. Push the repo to GitHub **including `data/` and `uploads/`** (only `data/adminUser.json` stays out — check `git status` shows your content files as new).
+2. Vercel → Add New Project → import the repo.
+3. Settings → Environment Variables, add:
+   - `AUTH_SECRET` — any 16+ char random string (`openssl rand -base64 32`)
+   - `ADMIN_EMAIL` + `ADMIN_PASSWORD` — your admin login (seeded at build)
+   - `NEXT_PUBLIC_SITE_URL` — `https://your-domain.vercel.app`
+4. Deploy. Open `/api/health` — expect `"ok": true`.
+5. Day to day: edit on `localhost:3000/admin` → `git add data uploads` → commit → push → Vercel rebuilds live. No database, no storage service, ever.
+
+## Deploy to a VPS (optional, true live CMS)
 
 Assumes Ubuntu with nginx in front. The app itself just needs Node 20+ and a writable `data/` + `uploads/`.
 
@@ -95,10 +112,12 @@ sudo -u leaf openssl rand -base64 32          # paste into AUTH_SECRET
 sudo -u leaf npm run build
 ```
 
-`data/` and `uploads/` are gitignored (the running server writes to them on
-every admin edit, so tracking them would break `git pull` on deploy). The build
-sees the empty folder, writes starter content, and carries on. It skips that
-step whenever content already exists, so rebuilds never overwrite a live site.
+`data/` and `uploads/` are tracked in git, so a deploy carries the content
+with it. The build's auto-seed only fills a truly empty folder (fresh clone)
+and never overwrites existing rows, so rebuilds never clobber the live site.
+On a VPS the running server additionally writes to them on every admin edit —
+`git pull` then fast-forwards content too; commit server-side edits if you
+want them kept.
 
 The build creates `admin@leaforganic.com` / `admin123`. On a public server,
 change it right away:
@@ -146,7 +165,7 @@ sudo -u leaf npm run build
 sudo systemctl restart leaf-organic
 ```
 
-`data/` and `uploads/` are outside git, so pulling and rebuilding never touches live content. The build's auto-seed is a no-op once content exists.
+`data/` and `uploads/` are tracked, so pulling brings the latest content with the code. The build's auto-seed is a no-op once content exists. (On a VPS, admin edits made directly on the server live in these folders — commit + push them if you want them preserved anywhere else.)
 
 ## Backups
 
@@ -169,8 +188,8 @@ Schedule it with cron or a systemd timer, and copy `backups/` off the machine �
 ## Project structure
 
 ```
-data/                     live JSON database (gitignored)
-uploads/                  live media store (gitignored)
+data/                     JSON database (tracked in git; adminUser.json excluded)
+uploads/                  media store (tracked in git)
 backups/                  snapshots from scripts/backup.mjs (gitignored)
 deploy/                   systemd unit + nginx site
 scripts/                  seed / reset / admin / backup, run with npm run <name>

@@ -1,12 +1,12 @@
 // Called automatically at the start of `npm run build`.
 //
-// A fresh clone has an empty data/ directory (the JSON files are gitignored,
-// because the running server writes to them on every admin edit and a tracked
-// working tree would break `git pull` on deploy). This puts starter content in
-// place so the build has something to prerender, which means deploying needs
-// no manual seed step.
+// Content JSON is tracked in git (publish-by-push): a normal checkout already
+// has data/, so this is a no-op. It only writes starter content for a truly
+// fresh clone, so the build has something to prerender and deploying needs no
+// manual seed step. The admin login comes from ADMIN_EMAIL/ADMIN_PASSWORD env
+// (data/adminUser.json is gitignored and never committed).
 //
-// No-op when content already exists -- it never overwrites a live site.
+// No-op when content already exists -- it never overwrites existing rows.
 import fs from "fs";
 import path from "path";
 import { seedContent } from "./seed-content";

@@ -24,16 +24,27 @@ export async function POST(req: NextRequest) {
   }
   const parsed = contactSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Validation failed", issues: parsed.error.issues }, { status: 400 });
-  const sub = await prisma.contactSubmission.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email,
-      phone: parsed.data.phone,
-      subject: parsed.data.subject,
-      message: parsed.data.message,
-      productId: parsed.data.productId,
-      status: "NEW",
-    },
-  });
-  return NextResponse.json({ ok: true, id: sub.id });
+  // NOTE: on live Vercel this write fails (read-only filesystem) because
+  // enquiries arrive at runtime but content is published via git push.
+  // Fail loudly with an actionable message instead of a silent 500.
+  try {
+    const sub = await prisma.contactSubmission.create({
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        subject: parsed.data.subject,
+        message: parsed.data.message,
+        productId: parsed.data.productId,
+        status: "NEW",
+      },
+    });
+    return NextResponse.json({ ok: true, id: sub.id });
+  } catch (e) {
+    console.error("contact submission failed:", e instanceof Error ? e.message : e);
+    return NextResponse.json(
+      { error: "Could not save your enquiry online. Please reach us on WhatsApp or phone instead." },
+      { status: 503 },
+    );
+  }
 }

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "cmun1x2jz456mx3k1u4xt",
+    "name": "Skincare",
+    "slug": "skincare",
+    "description": "Natural skincare for radiant skin",
+    "image": "/uploads/general/placeholder.jpg",
+    "sortOrder": 1,
+    "isActive": true,
+    "isTopRated": true,
+    "parentId": null,
+    "createdAt": "2026-09-29T19:10:24.815Z",
+    "updatedAt": "2026-09-29T19:10:24.815Z"
+  },
+  {
+    "id": "cmun1x2k0ii3luonjpgz2",
+    "name": "Hair Care",
+    "slug": "hair-care",
+    "description": "Nourish your hair, naturally",
+    "image": "/uploads/general/placeholder.jpg",
+    "sortOrder": 2,
+    "isActive": true,
+    "isTopRated": true,
+    "parentId": null,
+    "createdAt": "2026-09-29T19:10:24.816Z",
+    "updatedAt": "2026-09-29T19:10:24.816Z"
+  },
+  {
+    "id": "cmun1x2k05m2lif6jbxbo",
+    "name": "Body Care",
+    "slug": "body-care",
+    "description": "Indulge your body with organic goodness",
+    "image": "/uploads/general/placeholder.jpg",
+    "sortOrder": 3,
+    "isActive": true,
+    "isTopRated": false,
+    "parentId": null,
+    "createdAt": "2026-09-29T19:10:24.816Z",
+    "updatedAt": "2026-09-29T19:10:24.816Z"
+  },
+  {
+    "id": "cmun1x2k0l4ggesce20wo",
+    "name": "Lip Care",
+    "slug": "lip-care",
+    "description": "Soft, nourished lips",
+    "image": "/uploads/general/placeholder.jpg",
+    "sortOrder": 4,
+    "isActive": true,
+    "isTopRated": false,
+    "parentId": null,
+    "createdAt": "2026-09-29T19:10:24.816Z",
+    "updatedAt": "2026-09-29T19:10:24.816Z"
+  },
+  {
+    "id": "cmun1x2k1dhsdei3zuc70",
+    "name": "Cleansers",
+    "slug": "cleansers",
+    "description": null,
+    "image": null,
+    "sortOrder": 10,
+    "isActive": true,
+    "isTopRated": false,
+    "parentId": "cmun1x2jz456mx3k1u4xt",
+    "createdAt": "2026-09-29T19:10:24.817Z",
+    "updatedAt": "2026-09-29T19:10:24.817Z"
+  },
+  {
+    "id": "cmun1x2k1iu7zn15wp16l",
+    "name": "Moisturizers",
+    "slug": "moisturizers",
+    "description": null,
+    "image": null,
+    "sortOrder": 10,
+    "isActive": true,
+    "isTopRated": false,
+    "parentId": "cmun1x2jz456mx3k1u4xt",
+    "createdAt": "2026-09-29T19:10:24.817Z",
+    "updatedAt": "2026-09-29T19:10:24.817Z"
+  },
+  {
+    "id": "cmun1x2k1dqvlxye53mt3",
+    "name": "Serums",
+    "slug": "serums",
+    "description": null,
+    "image": null,
+    "sortOrder": 10,
+    "isActive": true,
+    "isTopRated": false,
+    "parentId": "cmun1x2jz456mx3k1u4xt",
+    "createdAt": "2026-09-29T19:10:24.817Z",
+    "updatedAt": "2026-09-29T19:10:24.817Z"
+  }
+]

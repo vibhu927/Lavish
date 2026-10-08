@@ -1,0 +1,44 @@
+[
+  {
+    "id": "cmun1x2jxg5pc9j6o676a",
+    "name": "Organic",
+    "slug": "organic",
+    "createdAt": "2026-09-29T19:10:24.813Z",
+    "updatedAt": "2026-09-29T19:10:24.813Z"
+  },
+  {
+    "id": "cmun1x2jx2dphcpe94apd",
+    "name": "Vegan",
+    "slug": "vegan",
+    "createdAt": "2026-09-29T19:10:24.813Z",
+    "updatedAt": "2026-09-29T19:10:24.813Z"
+  },
+  {
+    "id": "cmun1x2jy3nek7nl9fpxf",
+    "name": "Cruelty-free",
+    "slug": "cruelty-free",
+    "createdAt": "2026-09-29T19:10:24.814Z",
+    "updatedAt": "2026-09-29T19:10:24.814Z"
+  },
+  {
+    "id": "cmun1x2jyi76w07a601lj",
+    "name": "Ayurvedic",
+    "slug": "ayurvedic",
+    "createdAt": "2026-09-29T19:10:24.814Z",
+    "updatedAt": "2026-09-29T19:10:24.814Z"
+  },
+  {
+    "id": "cmun1x2jz7d5esz5dipv5",
+    "name": "Natural",
+    "slug": "natural",
+    "createdAt": "2026-09-29T19:10:24.815Z",
+    "updatedAt": "2026-09-29T19:10:24.815Z"
+  },
+  {
+    "id": "cmun1x2jzgqd9dsadmker",
+    "name": "Handmade",
+    "slug": "handmade",
+    "createdAt": "2026-09-29T19:10:24.815Z",
+    "updatedAt": "2026-09-29T19:10:24.815Z"
+  }
+]

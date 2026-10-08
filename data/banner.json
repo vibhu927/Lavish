@@ -1,0 +1,15 @@
+[
+  {
+    "id": "banner1",
+    "title": "Pure Beauty, Naturally",
+    "subtitle": "Discover organic skincare handcrafted with love",
+    "ctaText": "Explore Collection",
+    "ctaLink": "/products",
+    "desktopUrl": "/uploads/general/banner1.jpg",
+    "mobileUrl": null,
+    "sortOrder": 1,
+    "isActive": true,
+    "createdAt": "2026-09-29T19:10:24.825Z",
+    "updatedAt": "2026-09-29T19:10:24.825Z"
+  }
+]
