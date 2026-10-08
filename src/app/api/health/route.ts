@@ -6,6 +6,9 @@ import { UPLOAD_ROOT } from "@/lib/media";
 import { isAuthConfigured } from "@/lib/auth";
 import { isGitHubSyncEnabled } from "@/lib/github";
 
+// Never cache: this must report the LIVE deployment's truth on every hit.
+export const dynamic = "force-dynamic";
+
 /**
  * Persistence diagnostics. This project publishes content via git push
  * (portfolio-style): edit on localhost, commit, push, Vercel rebuilds.

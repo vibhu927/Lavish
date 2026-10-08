@@ -17,7 +17,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
   const cats = await prisma.category.findMany({ orderBy: { name: "asc" } });
   const initial = {
     ...product,
-    tagsString: product.tags.map((t) => t.tag.name).join(", "),
+    tagsString: product.tags.map((t) => t.tag?.name).filter(Boolean).join(", "),
   };
   const action = updateProduct.bind(null, id);
   return (

@@ -38,6 +38,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
     },
   });
   if (!product || !product.isActive) notFound();
+  // Dangling references (deleted category/tag) must degrade, never crash.
+  const category = product.category ?? null;
+  const tags = product.tags.filter((pt) => pt.tag);
   const settings = await getSettings();
   const related = await prisma.product.findMany({
     where: { categoryId: product.categoryId, id: { not: product.id }, isActive: true },
@@ -52,7 +55,11 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
           <Link href="/products" className="hover:underline">Products</Link>
           <span>/</span>
-          <Link href={`/categories/${product.category.slug}`} className="hover:underline">{product.category.name}</Link>
+          {category ? (
+            <Link href={`/categories/${category.slug}`} className="hover:underline">{category.name}</Link>
+          ) : (
+            <span>Uncategorised</span>
+          )}
           <span>/</span>
           <span className="text-[var(--brand-charcoal)]">{product.name}</span>
         </div>
@@ -79,7 +86,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
           {/* Details */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Link href={`/categories/${product.category.slug}`} className="text-sm text-[var(--brand-leaf)] font-medium">{product.category.name}</Link>
+              {category && (
+                <Link href={`/categories/${category.slug}`} className="text-sm text-[var(--brand-leaf)] font-medium">{category.name}</Link>
+              )}
               {product.isTopRated && <TopRatedBadge />}
             </div>
             <h1 className="font-display text-3xl md:text-4xl text-[var(--brand-charcoal)]">{product.name}</h1>
@@ -128,10 +137,10 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
               </div>
             )}
 
-            {product.tags.length > 0 && (
+            {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
-                {product.tags.map((pt) => (
-                  <span key={pt.tag.id} className="text-xs bg-[var(--brand-sage-light)] text-[var(--brand-teal)] px-3 py-1 rounded-full">{pt.tag.name}</span>
+                {tags.map((pt) => (
+                  <span key={pt.tag!.id} className="text-xs bg-[var(--brand-sage-light)] text-[var(--brand-teal)] px-3 py-1 rounded-full">{pt.tag!.name}</span>
                 ))}
               </div>
             )}
@@ -179,7 +188,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
           "@type": "Product",
           name: product.name,
           description: product.shortDesc || product.description,
-          category: product.category.name,
+          category: category?.name ?? "Leaf Organic",
           brand: { "@type": "Brand", name: "Leaf Organic" },
         })}} />
       </div>

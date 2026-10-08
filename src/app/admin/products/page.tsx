@@ -30,7 +30,7 @@ export default async function AdminProducts() {
                     <img src={p.images[0]?.url || "/uploads/general/placeholder.jpg"} alt="" className="h-10 w-10 rounded object-cover border" />
                     <div><div className="font-medium">{p.name}</div><div className="text-xs text-zinc-500">{p.slug}</div></div>
                   </td>
-                  <td className="p-3">{p.category.name}</td>
+                  <td className="p-3">{p.category?.name ?? "— (category deleted)"}</td>
                   <td className="p-3">{p.weight || "—"}</td>
                   <td className="p-3">{p.isTopRated ? "★" : "—"}</td>
                   <td className="p-3">{p.isActive ? "Yes" : "No"}</td>

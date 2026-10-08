@@ -41,7 +41,7 @@ export default async function CategoryDetail({ params, searchParams }: { params:
     products = products.filter((p) => p.name.toLowerCase().includes(lower) || (p.shortDesc||"").toLowerCase().includes(lower));
   }
   if (tag) {
-    products = products.filter((p) => p.tags.some((pt) => pt.tag.slug === tag));
+    products = products.filter((p) => p.tags.some((pt) => pt.tag?.slug === tag));
   }
   const total = products.length;
   const paginated = products.slice((page-1)*limit, page*limit);

@@ -48,7 +48,7 @@
     "updatedAt": "2026-09-29T19:10:24.822Z"
   },
   {
-    "id": "cmun1x2k8hxufn5vk8jxi",
+    "id": "cmuzzmkzbnf7kjcbdy19o",
     "productId": "cmun1x2k75w5msad5h5ca",
     "name": "Rose Pink",
     "sku": null,
@@ -56,31 +56,31 @@
     "image": null,
     "isActive": true,
     "sortOrder": 0,
-    "createdAt": "2026-09-29T19:10:24.824Z",
-    "updatedAt": "2026-09-29T19:10:24.824Z"
+    "createdAt": "2026-10-08T20:27:16.535Z",
+    "updatedAt": "2026-10-08T20:27:16.535Z"
   },
   {
-    "id": "cmun1x2k8bwv856mgc705",
+    "id": "cmuzzmkzj7iznc2oxdm4o",
     "productId": "cmun1x2k75w5msad5h5ca",
     "name": "Berry Red",
     "sku": null,
     "weight": "8g",
     "image": null,
     "isActive": true,
-    "sortOrder": 0,
-    "createdAt": "2026-09-29T19:10:24.824Z",
-    "updatedAt": "2026-09-29T19:10:24.824Z"
+    "sortOrder": 1,
+    "createdAt": "2026-10-08T20:27:16.543Z",
+    "updatedAt": "2026-10-08T20:27:16.543Z"
   },
   {
-    "id": "cmun1x2k8fqnrhe4nk3q3",
+    "id": "cmuzzmkzrkylg6jav7pd3",
     "productId": "cmun1x2k75w5msad5h5ca",
     "name": "Coral Peach",
     "sku": null,
     "weight": "8g",
     "image": null,
     "isActive": true,
-    "sortOrder": 0,
-    "createdAt": "2026-09-29T19:10:24.824Z",
-    "updatedAt": "2026-09-29T19:10:24.824Z"
+    "sortOrder": 2,
+    "createdAt": "2026-10-08T20:27:16.551Z",
+    "updatedAt": "2026-10-08T20:27:16.551Z"
   }
 ]

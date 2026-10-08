@@ -69,7 +69,7 @@ export default async function AdminDashboard() {
               {recentProducts.map((p) => (
                 <div key={p.id} className="text-sm flex justify-between">
                   <span>{p.name}</span>
-                  <span className="text-zinc-500">{p.category.name}</span>
+                  <span className="text-zinc-500">{p.category?.name ?? "—"}</span>
                 </div>
               ))}
             </div>
