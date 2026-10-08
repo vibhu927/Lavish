@@ -3,6 +3,7 @@ import { prisma } from "./prisma";
 import { requireAdmin } from "./auth";
 import { slugify } from "./utils";
 import { revalidatePath } from "next/cache";
+import { publishDirtyContent } from "./github";
 import { z } from "zod";
 
 export async function createCategory(formData: FormData) {
@@ -19,6 +20,7 @@ export async function createCategory(formData: FormData) {
   let base = slug; let i=1;
   while(await prisma.category.findUnique({where:{slug}})) { slug = `${base}-${i++}`;}
   await prisma.category.create({ data:{ name, slug, description: description||null, parentId, isTopRated, isActive, image: image||null, sortOrder: Number(formData.get("sortOrder")||0)}});
+  await publishDirtyContent(`cms: create category ${slug}`);
   revalidatePath("/admin/categories");
   revalidatePath("/");
   revalidatePath("/categories");
@@ -34,6 +36,7 @@ export async function updateCategory(id:string, formData: FormData){
   const image = String(formData.get("image")||"");
   const slug = slugify(String(formData.get("slug")||name));
   await prisma.category.update({ where:{id}, data:{ name, slug, description: description||null, parentId, isTopRated, isActive, image: image||null, sortOrder: Number(formData.get("sortOrder")||0)}});
+  await publishDirtyContent(`cms: update category ${slug}`);
   revalidatePath("/admin/categories");
   revalidatePath("/");
 }
@@ -41,6 +44,7 @@ export async function updateCategory(id:string, formData: FormData){
 export async function deleteCategory(id:string){
   await requireAdmin();
   await prisma.category.delete({ where:{id}});
+  await publishDirtyContent(`cms: delete category ${id}`);
   revalidatePath("/admin/categories");
 }
 
@@ -49,6 +53,7 @@ export async function toggleTopRatedCategory(id:string){
   const c = await prisma.category.findUnique({where:{id}});
   if(!c) return;
   await prisma.category.update({ where:{id}, data:{ isTopRated: !c.isTopRated }});
+  await publishDirtyContent(`cms: toggle top-rated category ${id}`);
   revalidatePath("/admin/categories");
 }
 
@@ -95,6 +100,7 @@ export async function createProduct(formData: FormData){
     if(!tag) tag = await prisma.tag.create({ data:{ name: t, slug: slugTag }});
     await prisma.productTag.create({ data:{ productId: product.id, tagId: tag.id }}).catch(()=>{});
   }
+  await publishDirtyContent(`cms: create product ${slug}`);
   revalidatePath("/admin/products");
   revalidatePath("/");
   revalidatePath("/products");
@@ -142,6 +148,7 @@ export async function updateProduct(id:string, formData: FormData){
     if(!tag) tag = await prisma.tag.create({ data:{ name: t, slug: slugTag }});
     await prisma.productTag.create({ data:{ productId:id, tagId: tag.id }}).catch(()=>{});
   }
+  await publishDirtyContent(`cms: update product ${slug}`);
   revalidatePath("/admin/products");
   revalidatePath(`/products/${slug}`);
 }
@@ -149,6 +156,7 @@ export async function updateProduct(id:string, formData: FormData){
 export async function deleteProduct(id:string){
   await requireAdmin();
   await prisma.product.delete({ where:{id}});
+  await publishDirtyContent(`cms: delete product ${id}`);
   revalidatePath("/admin/products");
 }
 
@@ -171,6 +179,7 @@ export async function updateSettings(formData: FormData){
   data.whatsappEnabled = formData.get("whatsappEnabled")==="on";
   data.blogEnabled = formData.get("blogEnabled")==="on";
   await prisma.websiteSettings.upsert({ where:{id:"settings"}, update: data, create:{ id:"settings", ...data }});
+  await publishDirtyContent("cms: update settings");
   revalidatePath("/");
   revalidatePath("/contact");
 }
@@ -189,6 +198,7 @@ export async function createBanner(formData: FormData){
       isActive: formData.get("isActive")!=="off",
     }
   });
+  await publishDirtyContent("cms: create banner");
   revalidatePath("/");
   revalidatePath("/admin/banners");
 }
@@ -196,18 +206,21 @@ export async function createBanner(formData: FormData){
 export async function deleteBanner(id:string){
   await requireAdmin();
   await prisma.banner.delete({ where:{id}});
+  await publishDirtyContent(`cms: delete banner ${id}`);
   revalidatePath("/");
 }
 
 export async function updateEnquiryStatus(id:string, status:string){
   await requireAdmin();
   await prisma.contactSubmission.update({ where:{id}, data:{ status }});
+  await publishDirtyContent(`cms: enquiry ${id} → ${status}`);
   revalidatePath("/admin/enquiries");
 }
 
 export async function deleteEnquiry(id:string){
   await requireAdmin();
   await prisma.contactSubmission.delete({ where:{id}});
+  await publishDirtyContent(`cms: delete enquiry ${id}`);
   revalidatePath("/admin/enquiries");
 }
 
@@ -229,6 +242,7 @@ export async function createBlog(formData: FormData){
       publishedAt: formData.get("isPublished")==="on" ? new Date() : null,
     }
   });
+  await publishDirtyContent(`cms: create blog ${slug}`);
   revalidatePath("/blogs");
   revalidatePath("/admin/blogs");
 }
@@ -236,5 +250,6 @@ export async function createBlog(formData: FormData){
 export async function deleteBlog(id:string){
   await requireAdmin();
   await prisma.blogPost.delete({ where:{id}});
+  await publishDirtyContent(`cms: delete blog ${id}`);
   revalidatePath("/admin/blogs");
 }

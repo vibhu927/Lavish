@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createBlog, deleteBlog } from "@/lib/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
 import { BlogForm } from "@/components/admin/BlogForm";
 import { getSettings } from "@/lib/settings";
 
@@ -33,9 +34,9 @@ export default async function AdminBlogs() {
               <h4 className="font-medium">{b.title}</h4>
               <p className="text-xs text-zinc-500">{b.slug} • {b.isPublished ? "Published" : "Draft"}</p>
               <p className="text-sm text-zinc-600 mt-1 line-clamp-2">{b.excerpt}</p>
-              <form action={async () => { "use server"; await deleteBlog(b.id); }} className="mt-2">
+              <ActionForm action={deleteBlog.bind(null, b.id)} className="mt-2" confirmMessage={`Delete post "${b.title}"?`}>
                 <button className="text-red-600 text-sm">Delete</button>
-              </form>
+              </ActionForm>
             </div>
           ))}
           {blogs.length===0 && <p className="text-sm text-zinc-500">No posts.</p>}

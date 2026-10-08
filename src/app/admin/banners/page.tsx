@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createBanner, deleteBanner } from "@/lib/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
 import { BannerForm } from "@/components/admin/BannerForm";
 
 export default async function AdminBanners() {
@@ -24,9 +25,9 @@ export default async function AdminBanners() {
                 <p className="text-sm text-zinc-500">{b.subtitle}</p>
                 <p className="text-xs text-zinc-400 mt-1">{b.isActive ? "Active" : "Disabled"} • Order {b.sortOrder}</p>
               </div>
-              <form action={async () => { "use server"; await deleteBanner(b.id); }}>
+              <ActionForm action={deleteBanner.bind(null, b.id)} confirmMessage={`Delete banner "${b.title}"?`}>
                 <button className="text-red-600 text-sm">Delete</button>
-              </form>
+              </ActionForm>
             </div>
           ))}
           {banners.length === 0 && <p className="text-sm text-zinc-500">No banners yet.</p>}

@@ -12,13 +12,13 @@ Brand colors: `#9CB080` (sage) • `#618764` (leaf) • `#2B5748` (teal) • `#2
 
 ## How publishing works (Vercel, no extra services)
 
-Content JSON (`data/`) and photos (`uploads/`) are **committed to git** — same as a portfolio site. There is no database and no storage service.
+Content JSON (`data/`) and photos (`uploads/`) are **committed to git** — same as a portfolio site. There is no database and no storage service. Two workflows, same result:
 
-1. Edit on `localhost:3000/admin` (saves to `data/` + `uploads/` on your laptop).
-2. `git add data uploads && git commit -m "..." && git push`.
-3. Vercel rebuilds — the live site shows the new content (`outputFileTracingIncludes` in `next.config.ts` makes sure the files are bundled).
+**A. Auto-publish (recommended): edit right on the live admin.** Set `GITHUB_TOKEN` + `GITHUB_REPO` on Vercel (setup in `.env.example`). Every save — text, photos, deletes — is committed straight back to the repo as one `cms: ...` commit, and Vercel redeploys with the new content in ~1–2 min. No Vercel Blob, database, or other service involved: just the app + GitHub, which you already use.
 
-> **Never edit on the live URL.** Vercel's filesystem is read-only and ephemeral: saves there fail with an honest error, and anything that looks saved vanishes on refresh. The admin, uploads and contact form all say so when it happens. Same rule applies to the contact/enquiries inbox — live enquiries can't be stored on Vercel, so the form tells visitors to use WhatsApp/phone instead. (Want a true live CMS where edits save on the server itself? Host on a VPS — see below. The code supports both; nothing else changes.)
+**B. Manual push.** Edit on `localhost:3000/admin` (saves to `data/` + `uploads/` on your laptop), then `git add data uploads && git commit -m "..." && git push`. Vercel rebuilds — the live site shows the new content (`outputFileTracingIncludes` in `next.config.ts` makes sure the files are bundled).
+
+> Without the GitHub token, the live disk is read-only by design: saves there fail fast with an honest error ("Cannot save ... on this live server") instead of a fake success, and the contact form tells visitors to use WhatsApp/phone. With the token, everything — including the enquiries inbox — persists via redeploy. (Want instant saves with no redeploy wait? Host on a VPS — see below. The code supports both; nothing else changes.)
 
 ## Data layer
 
@@ -88,7 +88,8 @@ Without `AUTH_SECRET` the app refuses to sign sessions and admin pages error out
    - `AUTH_SECRET` — any 16+ char random string (`openssl rand -base64 32`)
    - `ADMIN_EMAIL` + `ADMIN_PASSWORD` — your admin login (seeded at build)
    - `NEXT_PUBLIC_SITE_URL` — `https://your-domain.vercel.app`
-4. Deploy. Open `/api/health` — expect `"ok": true`.
+   - `GITHUB_TOKEN` + `GITHUB_REPO` (+ optional `GITHUB_BRANCH`) — live auto-publish (setup steps in `.env.example`)
+4. Deploy. Open `/api/health` — expect `"ok": true` and `"liveWritesWork": true`.
 5. Day to day: edit on `localhost:3000/admin` → `git add data uploads` → commit → push → Vercel rebuilds live. No database, no storage service, ever.
 
 ## Deploy to a VPS (optional, true live CMS)

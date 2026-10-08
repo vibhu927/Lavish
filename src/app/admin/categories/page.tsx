@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { deleteCategory, toggleTopRatedCategory } from "@/lib/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
 import Link from "next/link";
 
 export default async function AdminCategories() {
@@ -29,16 +30,16 @@ export default async function AdminCategories() {
                   <td className="p-3 text-zinc-500">{c.slug}</td>
                   <td className="p-3 text-zinc-500">{c.parentId ? cats.find(x=>x.id===c.parentId)?.name : "—"}</td>
                   <td className="p-3">
-                    <form action={async () => { "use server"; await toggleTopRatedCategory(c.id); }}>
+                    <ActionForm action={toggleTopRatedCategory.bind(null, c.id)}>
                       <button className={`px-2 py-1 rounded-full text-xs ${c.isTopRated ? "bg-[var(--brand-sage)] text-white" : "bg-zinc-100"}`}>{c.isTopRated ? "★ Top" : "—"}</button>
-                    </form>
+                    </ActionForm>
                   </td>
                   <td className="p-3">{c.isActive ? "Yes" : "No"}</td>
                   <td className="p-3 flex gap-2">
                     <Link href={`/admin/categories/${c.id}/edit`} className="text-[var(--brand-leaf)] hover:underline">Edit</Link>
-                    <form action={async () => { "use server"; await deleteCategory(c.id); }}>
+                    <ActionForm action={deleteCategory.bind(null, c.id)} confirmMessage={`Delete category "${c.name}"?`}>
                       <button className="text-red-600 hover:underline">Delete</button>
-                    </form>
+                    </ActionForm>
                   </td>
                 </tr>
               ))}

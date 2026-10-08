@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { contactSchema } from "@/lib/validations";
+import { publishDirtyContent } from "@/lib/github";
 
 // simple in-memory rate limit
 const hits = new Map<string, number[]>();
@@ -24,9 +25,9 @@ export async function POST(req: NextRequest) {
   }
   const parsed = contactSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Validation failed", issues: parsed.error.issues }, { status: 400 });
-  // NOTE: on live Vercel this write fails (read-only filesystem) because
-  // enquiries arrive at runtime but content is published via git push.
-  // Fail loudly with an actionable message instead of a silent 500.
+  // NOTE: on live Vercel the local disk is read-only/ephemeral. With GitHub
+  // auto-publish configured the enquiry is committed to the repo (and goes
+  // live on redeploy); otherwise it fails loudly instead of vanishing.
   try {
     const sub = await prisma.contactSubmission.create({
       data: {
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
         status: "NEW",
       },
     });
+    await publishDirtyContent(`cms: new enquiry from ${parsed.data.name}`);
     return NextResponse.json({ ok: true, id: sub.id });
   } catch (e) {
     console.error("contact submission failed:", e instanceof Error ? e.message : e);

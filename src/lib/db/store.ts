@@ -81,6 +81,30 @@ function ephemeralHint(): string | null {
   return null;
 }
 
+/**
+ * True only inside a live serverless function — NOT at build time.
+ * VERCEL_REGION / AWS_LAMBDA_FUNCTION_NAME exist at request runtime but
+ * are absent during `next build` / seed scripts, so build-time seeding is
+ * never blocked by the fail-fast in writeAll.
+ */
+function isLiveServerlessRuntime(): boolean {
+  return !!(process.env.VERCEL_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
+/** GitHub auto-publish configured? (kept env-only here to avoid a store↔github import cycle) */
+function isSyncEnabled(): boolean {
+  return !!(process.env.GITHUB_TOKEN && process.env.GITHUB_REPO?.includes("/"));
+}
+
+/** Models written since the last publish — flushed to GitHub by publishDirtyContent(). */
+const dirtyModels = new Set<string>();
+
+export function takeDirtyModels(): string[] {
+  const out = [...dirtyModels];
+  dirtyModels.clear();
+  return out;
+}
+
 let warnedEphemeral = false;
 
 /* ------------------------------------------------------------------ *
@@ -104,6 +128,15 @@ export function mutate<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export async function writeAll(model: string, rows: Row[]): Promise<void> {
+  // On a live serverless host without GitHub auto-publish, a write either
+  // throws (read-only FS) or "succeeds" into an overlay that the next request
+  // never sees — the refresh-fallback bug. Fail loudly here so the admin gets
+  // an honest error instead of a fake success.
+  if (isLiveServerlessRuntime() && !isSyncEnabled()) {
+    throw new Error(
+      `Cannot save ${model} on this live server (read-only filesystem). Publishing needs GitHub auto-publish: set GITHUB_TOKEN + GITHUB_REPO on Vercel (see README), or edit on localhost and push.`,
+    );
+  }
   await ensureDir();
   const file = fileFor(model);
   // Unique tmp per write: pid alone collides when one process pipelines
@@ -159,6 +192,7 @@ export async function writeAll(model: string, rows: Row[]): Promise<void> {
   } catch {
     invalidate(model);
   }
+  if (isSyncEnabled()) dirtyModels.add(model);
 }
 
 /** Diagnostics for /api/health: where writes actually go + is it writable? */

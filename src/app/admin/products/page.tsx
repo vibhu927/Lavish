@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { deleteProduct } from "@/lib/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
 import Link from "next/link";
 
 export default async function AdminProducts() {
@@ -36,9 +37,9 @@ export default async function AdminProducts() {
                   <td className="p-3 flex gap-2">
                     <Link href={`/admin/products/${p.id}/edit`} className="text-[var(--brand-leaf)] hover:underline">Edit</Link>
                     <Link href={`/products/${p.slug}`} target="_blank" className="text-zinc-500 hover:underline">View</Link>
-                    <form action={async () => { "use server"; await deleteProduct(p.id); }}>
+                    <ActionForm action={deleteProduct.bind(null, p.id)} confirmMessage={`Delete product "${p.name}"?`}>
                       <button className="text-red-600 hover:underline">Delete</button>
-                    </form>
+                    </ActionForm>
                   </td>
                 </tr>
               ))}
