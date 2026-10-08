@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { writeFile, mkdir, unlink } from "fs/promises";
+import { mkdir, unlink, open, stat } from "fs/promises";
 import path from "path";
 import { prisma } from "./prisma";
 
@@ -41,8 +41,32 @@ export const localMediaStorage: MediaStorage = {
     const filename = `${hash}-${Date.now()}-${safeName}`;
 
     const dir = path.join(UPLOAD_ROOT, safeFolder);
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, filename), buffer);
+    try {
+      await mkdir(dir, { recursive: true });
+    } catch (e) {
+      throw new Error(
+        `Cannot create upload dir ${dir} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    const dest = path.join(dir, filename);
+    try {
+      const handle = await open(dest, "w");
+      try {
+        await handle.writeFile(buffer);
+        await handle.sync(); // flush bytes so a refresh right after upload sees them
+      } finally {
+        await handle.close();
+      }
+      // Verify the file actually landed on disk before recording it in the DB.
+      const st = await stat(dest);
+      if (st.size !== buffer.length) {
+        throw new Error(`size mismatch after write (expected ${buffer.length}, got ${st.size})`);
+      }
+    } catch (e) {
+      throw new Error(
+        `Cannot write upload ${dest} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
 
     const url = `/uploads/${safeFolder}/${filename}`;
     await prisma.mediaAsset.create({

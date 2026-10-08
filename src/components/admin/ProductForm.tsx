@@ -18,15 +18,36 @@ export function ProductForm({ categories, initial, action }: { categories: any[]
     const files = e.target.files;
     if (!files) return;
     setUploading(true);
-    for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", "products");
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.url) setImages((prev) => [...prev, data.url]);
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "products");
+        let res: Response;
+        try {
+          res = await fetch("/api/upload", { method: "POST", body: fd });
+        } catch {
+          toast(`Upload failed for ${file.name}: network error`, "error");
+          continue;
+        }
+        let data: { url?: string; error?: string } | null = null;
+        try {
+          data = await res.json();
+        } catch {
+          // non-JSON error body
+        }
+        const url = data?.url;
+        if (res.ok && url) {
+          setImages((prev) => [...prev, url]);
+        } else {
+          toast(`Upload failed for ${file.name}: ${data?.error || `server returned ${res.status}`}`, "error");
+        }
+      }
+    } finally {
+      setUploading(false);
+      // Allow re-selecting the same file after a failed attempt.
+      e.target.value = "";
     }
-    setUploading(false);
   }
 
   function addAttr() { setAttrs([...attrs, { key: "", value: "" }]); }

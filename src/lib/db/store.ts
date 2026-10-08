@@ -20,20 +20,28 @@ async function ensureDir(): Promise<void> {
  * Read path: parse once per model, re-read when the file's mtime moves.
  * ------------------------------------------------------------------ */
 
-type CacheEntry = { mtimeMs: number; rows: Row[] };
+type CacheEntry = { mtimeMs: number; size: number; rows: Row[] };
 const cache = new Map<string, CacheEntry>();
+
+/** Shallow-clone rows so callers can never mutate the cached copy. */
+function cloneRows(rows: Row[]): Row[] {
+  return rows.map((r) => ({ ...r }));
+}
 
 export async function readAll(model: string): Promise<Row[]> {
   const file = fileFor(model);
   let mtimeMs = 0;
+  let size = -1;
   try {
-    mtimeMs = (await fs.stat(file)).mtimeMs;
+    const st = await fs.stat(file);
+    mtimeMs = st.mtimeMs;
+    size = st.size;
   } catch {
     cache.delete(model);
     return [];
   }
   const hit = cache.get(model);
-  if (hit && hit.mtimeMs === mtimeMs) return hit.rows;
+  if (hit && hit.mtimeMs === mtimeMs && hit.size === size) return cloneRows(hit.rows);
 
   let parsed: Row[];
   try {
@@ -43,14 +51,24 @@ export async function readAll(model: string): Promise<Row[]> {
   }
   if (!Array.isArray(parsed)) return [];
   const rows = parsed.map((r) => revive(model, r));
-  cache.set(model, { mtimeMs, rows });
-  return rows;
+  cache.set(model, { mtimeMs, size, rows });
+  return cloneRows(rows);
 }
 
 /** Drop the in-process cache. Called after every write. */
 function invalidate(model: string): void {
   cache.delete(model);
 }
+
+function ephemeralHint(): string | null {
+  if (process.env.VERCEL) return "VERCEL";
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME) return "AWS_LAMBDA";
+  if (process.env.NETLIFY) return "NETLIFY";
+  if (process.env.FLY_APP_NAME) return "FLY";
+  return null;
+}
+
+let warnedEphemeral = false;
 
 /* ------------------------------------------------------------------ *
  * Write path: one writer at a time, atomic replace on disk.
@@ -75,11 +93,82 @@ export function mutate<T>(fn: () => Promise<T>): Promise<T> {
 export async function writeAll(model: string, rows: Row[]): Promise<void> {
   await ensureDir();
   const file = fileFor(model);
-  const tmp = `${file}.${process.pid}.tmp`;
+  // Unique tmp per write: pid alone collides when one process pipelines
+  // several writes to the same model (each writeAll would reuse one tmp).
+  const uniq = `${process.pid}.${Date.now().toString(36)}.${Math.floor(Math.random() * 1e9).toString(36)}`;
+  const tmp = `${file}.${uniq}.tmp`;
   const serialised = rows.map((r) => serialise(model, r));
-  await fs.writeFile(tmp, `${JSON.stringify(serialised, null, 2)}\n`, "utf8");
-  await fs.rename(tmp, file);
-  invalidate(model);
+  try {
+    const payload = `${JSON.stringify(serialised, null, 2)}\n`;
+    const handle = await fs.open(tmp, "w");
+    try {
+      await handle.writeFile(payload, "utf8");
+      await handle.sync(); // flush file bytes before rename
+    } finally {
+      await handle.close();
+    }
+    await fs.rename(tmp, file);
+    // fsync the directory so the rename itself survives a crash/power loss.
+    try {
+      const dirHandle = await fs.open(path.dirname(file), "r");
+      try {
+        await dirHandle.sync();
+      } finally {
+        await dirHandle.close();
+      }
+    } catch {
+      // fsync on dirs fails on some platforms (macOS) — not fatal.
+    }
+  } catch (e) {
+    try {
+      await fs.unlink(tmp);
+    } catch {}
+    const hint = ephemeralHint();
+    const where = `model=${model} file=${file} cwd=${process.cwd()} DATA_DIR=${DATA_DIR}`;
+    if (!warnedEphemeral && hint) {
+      warnedEphemeral = true;
+      console.error(
+        `[store] write failed on ephemeral host (${hint}). ` +
+          `JSON files do not persist on serverless — use a VPS with a persistent disk. ${where}`,
+      );
+    }
+    throw new Error(`Failed to save ${model} (${where}): ${e instanceof Error ? e.message : String(e)}`);
+  }
+  // Refresh the cache from the file we just wrote (not from the caller's
+  // array) so the next read compares against the true post-write mtime+size
+  // and can never serve the pre-write copy after a fast save → refresh.
+  try {
+    const st = await fs.stat(file);
+    cache.set(model, { mtimeMs: st.mtimeMs, size: st.size, rows: cloneRows(rows) });
+  } catch {
+    invalidate(model);
+  }
+}
+
+/** Diagnostics for /api/health: where writes actually go + is it writable? */
+export async function storeInfo(): Promise<{
+  dataDir: string;
+  cwd: string;
+  writable: boolean;
+  ephemeralHost: string | null;
+  error?: string;
+}> {
+  const ephemeralHost = ephemeralHint();
+  try {
+    await ensureDir();
+    const probe = path.join(DATA_DIR, `.write-test.${process.pid}`);
+    await fs.writeFile(probe, "ok", "utf8");
+    await fs.unlink(probe);
+    return { dataDir: DATA_DIR, cwd: process.cwd(), writable: true, ephemeralHost };
+  } catch (e) {
+    return {
+      dataDir: DATA_DIR,
+      cwd: process.cwd(),
+      writable: false,
+      ephemeralHost,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
 }
 
 /* ------------------------------------------------------------------ *

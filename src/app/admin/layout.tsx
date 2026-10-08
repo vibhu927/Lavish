@@ -1,4 +1,10 @@
 import { getSessionUser } from "@/lib/auth";
+
+// Admin must never be statically prerendered: after a save → refresh the
+// admin list/form has to show what is on disk right now, not the build-time
+// snapshot. Without this, a successful write can *look* like it reverted.
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 

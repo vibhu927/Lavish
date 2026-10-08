@@ -18,7 +18,15 @@ RestartSec=5
 # data/ and uploads/ are the live database and media store.
 # They live inside the app dir and are NOT in git, so a `git pull`
 # deploy will not touch them.
-ReadWritePaths=/srv/leaf-organic/data /srv/leaf-organic/uploads
+#
+# The whole app dir is writable to the service (not just data/ + uploads/)
+# because the app must be able to CREATE data/ + uploads/ on first boot —
+# with ProtectSystem=strict a missing data/ dir made every save fail with
+# EROFS and the admin fell back to old content on refresh. Pre-create the
+# dirs on deploy as well:
+#   sudo mkdir -p /srv/leaf-organic/data /srv/leaf-organic/uploads
+#   sudo chown -R leaf:leaf /srv/leaf-organic/data /srv/leaf-organic/uploads
+ReadWritePaths=/srv/leaf-organic /srv/leaf-organic/data /srv/leaf-organic/uploads
 
 NoNewPrivileges=true
 PrivateTmp=true
