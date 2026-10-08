@@ -3,6 +3,7 @@ import { mkdir, unlink, open, stat } from "fs/promises";
 import path from "path";
 import { prisma } from "./prisma";
 import { isGitHubSyncEnabled } from "./github";
+import { setCachedRows, withDefaults, type Row } from "./db/store";
 
 /** On live Vercel without auto-publish, point the error at the fix. */
 function liveHint(): string {
@@ -13,7 +14,7 @@ function liveHint(): string {
 }
 
 export interface MediaStorage {
-  save(file: File, folder?: string): Promise<{ url: string; hash: string }>;
+  save(file: File, folder?: string): Promise<{ url: string; hash: string; published?: boolean }>;
   delete(url: string): Promise<void>;
 }
 
@@ -50,15 +51,11 @@ export const localMediaStorage: MediaStorage = {
     const filename = `${hash}-${Date.now()}-${safeName}`;
 
     const dir = path.join(UPLOAD_ROOT, safeFolder);
+    const url = `/uploads/${safeFolder}/${filename}`;
+    const rel = `${safeFolder}/${filename}`;
     try {
       await mkdir(dir, { recursive: true });
-    } catch (e) {
-      throw new Error(
-        `Cannot create upload dir ${dir} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}.${liveHint()}`,
-      );
-    }
-    const dest = path.join(dir, filename);
-    try {
+      const dest = path.join(dir, filename);
       const handle = await open(dest, "w");
       try {
         await handle.writeFile(buffer);
@@ -72,12 +69,36 @@ export const localMediaStorage: MediaStorage = {
         throw new Error(`size mismatch after write (expected ${buffer.length}, got ${st.size})`);
       }
     } catch (e) {
+      // Strictly read-only live disk (e.g. Vercel /var/task) WITH auto-publish:
+      // the bytes can never land locally, so publish file + library row
+      // straight from memory. The redeploy then serves the image.
+      if (isGitHubSyncEnabled()) {
+        const row = withDefaults("mediaAsset", {
+          url,
+          filename,
+          mimeType: file.type,
+          size: file.size,
+          hash,
+        }) as Row;
+        const current = (await prisma.mediaAsset.findMany()) as Row[];
+        const { pushFilesToGitHub } = await import("./github");
+        await pushFilesToGitHub(
+          [
+            { path: "data/mediaAsset.json", content: `${JSON.stringify([...current, row], null, 2)}\n` },
+            { path: `uploads/${rel}`, content: buffer },
+          ],
+          [],
+          `cms: upload ${rel} (live)`,
+        );
+        await setCachedRows("mediaAsset", [...current, row]);
+        return { url, hash, published: true };
+      }
+      const dest = path.join(dir, filename);
       throw new Error(
         `Cannot write upload ${dest} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}.${liveHint()}`,
       );
     }
 
-    const url = `/uploads/${safeFolder}/${filename}`;
     await prisma.mediaAsset.create({
       data: { url, filename, mimeType: file.type, size: file.size, hash },
     });

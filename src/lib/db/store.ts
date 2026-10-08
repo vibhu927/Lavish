@@ -50,6 +50,10 @@ export async function readAll(model: string): Promise<Row[]> {
     mtimeMs = st.mtimeMs;
     size = st.size;
   } catch {
+    // Missing file but we hold newer rows in cache (live read-only disk after
+    // a direct-to-GitHub save in this warm instance) — serve those.
+    const stale = cache.get(model);
+    if (stale) return cloneRows(stale.rows);
     cache.delete(model);
     return [];
   }
@@ -60,6 +64,10 @@ export async function readAll(model: string): Promise<Row[]> {
   try {
     text = await fs.readFile(file, "utf8");
   } catch {
+    // Missing file but we hold newer rows in cache (live read-only disk after
+    // a direct-to-GitHub save in this warm instance) — serve those.
+    const stale = cache.get(model);
+    if (stale) return cloneRows(stale.rows);
     return [];
   }
   const rows = parseRows(model, text);
@@ -71,6 +79,19 @@ export async function readAll(model: string): Promise<Row[]> {
 /** Drop the in-process cache. Called after every write. */
 function invalidate(model: string): void {
   cache.delete(model);
+}
+
+/**
+ * Overwrite the cached rows (used after a direct-to-GitHub save that never
+ * touched local disk, so the warm instance still builds on fresh data).
+ */
+export async function setCachedRows(model: string, rows: Row[]): Promise<void> {
+  try {
+    const st = await fs.stat(fileFor(model));
+    cache.set(model, { mtimeMs: st.mtimeMs, size: st.size, rows: cloneRows(rows) });
+  } catch {
+    cache.set(model, { mtimeMs: 0, size: -1, rows: cloneRows(rows) });
+  }
 }
 
 function ephemeralHint(): string | null {
@@ -137,7 +158,6 @@ export async function writeAll(model: string, rows: Row[]): Promise<void> {
       `Cannot save ${model} on this live server (read-only filesystem). Publishing needs GitHub auto-publish: set GITHUB_TOKEN + GITHUB_REPO on Vercel (see README), or edit on localhost and push.`,
     );
   }
-  await ensureDir();
   const file = fileFor(model);
   // Unique tmp per write: pid alone collides when one process pipelines
   // several writes to the same model (each writeAll would reuse one tmp).
@@ -145,6 +165,7 @@ export async function writeAll(model: string, rows: Row[]): Promise<void> {
   const tmp = `${file}.${uniq}.tmp`;
   const serialised = rows.map((r) => serialise(model, r));
   try {
+    await ensureDir();
     const payload = `${JSON.stringify(serialised, null, 2)}\n`;
     const handle = await fs.open(tmp, "w");
     try {
@@ -169,6 +190,30 @@ export async function writeAll(model: string, rows: Row[]): Promise<void> {
     try {
       await fs.unlink(tmp);
     } catch {}
+    // Strictly read-only live disk (e.g. Vercel /var/task) WITH auto-publish:
+    // the local write can never land, so persist straight from memory to the
+    // repo instead. The redeploy then carries the change live.
+    if (isSyncEnabled()) {
+      try {
+        const { pushFilesToGitHub } = await import("../github");
+        const payload = `${JSON.stringify(serialised, null, 2)}\n`;
+        await pushFilesToGitHub([{ path: `data/${model}.json`, content: payload }], [], `cms: update ${model} (live)`);
+        // Cache the rows against the on-disk stat (or a blank stamp when the
+        // file doesn't even exist) so later reads in this warm instance build
+        // on what was just saved instead of a stale bundle copy.
+        try {
+          const st = await fs.stat(file);
+          cache.set(model, { mtimeMs: st.mtimeMs, size: st.size, rows: cloneRows(rows) });
+        } catch {
+          cache.set(model, { mtimeMs: 0, size: -1, rows: cloneRows(rows) });
+        }
+        return;
+      } catch (pushErr) {
+        throw new Error(
+          `Live save failed (disk is read-only and the GitHub publish failed: ${pushErr instanceof Error ? pushErr.message : String(pushErr)}). Check GITHUB_TOKEN + GITHUB_REPO on Vercel.`,
+        );
+      }
+    }
     const hint = ephemeralHint();
     const where = `model=${model} file=${file} cwd=${process.cwd()} DATA_DIR=${DATA_DIR}`;
     if (!warnedEphemeral && hint) {
@@ -179,7 +224,7 @@ export async function writeAll(model: string, rows: Row[]): Promise<void> {
       );
     }
     const suffix = hint
-      ? " (This live server cannot save: edit on localhost, then commit + push to publish.)"
+      ? " (This live server cannot save: set GITHUB_TOKEN + GITHUB_REPO on Vercel for auto-publish, or edit on localhost, then commit + push.)"
       : "";
     throw new Error(`Failed to save ${model} (${where}): ${e instanceof Error ? e.message : String(e)}${suffix}`);
   }

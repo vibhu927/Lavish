@@ -13,7 +13,11 @@ export async function POST(req: NextRequest) {
   const folder = (form.get("folder") as string) || "general";
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
   try {
-    const { url } = await localMediaStorage.save(file, folder);
+    const saved = await localMediaStorage.save(file, folder);
+    const url = saved.url;
+    // Already published straight from memory (strictly read-only live disk)
+    // — nothing more to do.
+    if (saved.published) return NextResponse.json({ url });
     // Publish the new file + its mediaAsset row to GitHub (no-op without
     // the token). Read the bytes back from disk so the commit holds exactly
     // what was saved, even if the local disk is an ephemeral overlay.
