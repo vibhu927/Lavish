@@ -1,4 +1,26 @@
 import { AdminNav } from "./AdminNav";
+import { isGitHubSyncEnabled } from "@/lib/github";
+
+/**
+ * On Vercel (only), every admin page shows whether live saving works.
+ * No more guessing: green = saves publish, red = saves will fail + why.
+ */
+export function PublishBanner() {
+  if (!process.env.VERCEL) return null; // localhost/VPS save to disk — nothing to say
+  if (isGitHubSyncEnabled()) {
+    return (
+      <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 text-sm text-green-800">
+        Live auto-publish <strong>ON</strong> — saves commit to GitHub and appear after the Vercel rebuild finishes (~2 min). Don&apos;t expect them instantly on refresh.
+      </div>
+    );
+  }
+  return (
+    <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-800">
+      Live saving <strong>OFF</strong> — edits and uploads made here will fail. Either set <code>GITHUB_TOKEN</code> + <code>GITHUB_REPO</code> on Vercel (README → “live editing on Vercel”), or edit on localhost and push.
+    </div>
+  );
+}
+
 export function AdminShell({ children, title }: { children: React.ReactNode; title?: string }) {
   return (
     <div className="min-h-screen bg-[var(--brand-cream)] flex">
@@ -10,6 +32,7 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
         <AdminNav />
       </aside>
       <main className="flex-1 p-6 md:p-8 overflow-auto">
+        <PublishBanner />
         {title && <h1 className="font-display text-3xl mb-6">{title}</h1>}
         {children}
         <div className="md:hidden mt-8 border-t pt-6">

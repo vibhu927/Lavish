@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { PublishBanner } from "@/components/admin/AdminShell";
 
 export default async function AdminDashboard() {
   const user = await getSessionUser();
@@ -37,6 +38,7 @@ export default async function AdminDashboard() {
         <AdminNav />
       </aside>
       <main className="flex-1 p-6 md:p-8">
+        <PublishBanner />
         <h1 className="font-display text-3xl mb-2">Dashboard</h1>
         <p className="text-zinc-500 mb-6">Welcome, {user.name} — {user.email}</p>
 

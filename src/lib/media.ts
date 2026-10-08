@@ -2,6 +2,15 @@ import { createHash } from "crypto";
 import { mkdir, unlink, open, stat } from "fs/promises";
 import path from "path";
 import { prisma } from "./prisma";
+import { isGitHubSyncEnabled } from "./github";
+
+/** On live Vercel without auto-publish, point the error at the fix. */
+function liveHint(): string {
+  if (process.env.VERCEL && !isGitHubSyncEnabled()) {
+    return " Live uploads need GitHub auto-publish (set GITHUB_TOKEN + GITHUB_REPO on Vercel, see README) — or upload on localhost and push.";
+  }
+  return "";
+}
 
 export interface MediaStorage {
   save(file: File, folder?: string): Promise<{ url: string; hash: string }>;
@@ -45,7 +54,7 @@ export const localMediaStorage: MediaStorage = {
       await mkdir(dir, { recursive: true });
     } catch (e) {
       throw new Error(
-        `Cannot create upload dir ${dir} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}`,
+        `Cannot create upload dir ${dir} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}.${liveHint()}`,
       );
     }
     const dest = path.join(dir, filename);
@@ -64,7 +73,7 @@ export const localMediaStorage: MediaStorage = {
       }
     } catch (e) {
       throw new Error(
-        `Cannot write upload ${dest} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}`,
+        `Cannot write upload ${dest} (cwd=${process.cwd()} UPLOAD_DIR=${UPLOAD_ROOT}): ${e instanceof Error ? e.message : String(e)}.${liveHint()}`,
       );
     }
 
