@@ -3,6 +3,7 @@ import { useTransition } from "react";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
+import { friendlyActionError } from "@/lib/action-error";
 
 export function SettingsForm({ settings, action }: { settings: any; action: (fd: FormData) => Promise<void> }) {
   const { toast } = useToast();
@@ -13,8 +14,8 @@ export function SettingsForm({ settings, action }: { settings: any; action: (fd:
       try {
         await action(formData);
         toast("Settings saved ✓", "success");
-      } catch (e: any) {
-        toast(e?.message || "Failed to save settings", "error");
+      } catch (e) {
+        toast(friendlyActionError(e, "Failed to save settings"), "error");
       }
     });
   }

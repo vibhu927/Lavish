@@ -3,6 +3,7 @@ import { useTransition } from "react";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
+import { friendlyActionError } from "@/lib/action-error";
 
 export function BannerForm({ action }: { action: (fd: FormData) => Promise<void> }) {
   const { toast } = useToast();
@@ -13,8 +14,8 @@ export function BannerForm({ action }: { action: (fd: FormData) => Promise<void>
       try {
         await action(formData);
         toast("Banner created ✓", "success");
-      } catch (e: any) {
-        toast(e?.message || "Failed to create banner", "error");
+      } catch (e) {
+        toast(friendlyActionError(e, "Failed to create banner"), "error");
       }
     });
   }

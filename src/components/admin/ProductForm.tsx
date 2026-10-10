@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
+import { friendlyActionError } from "@/lib/action-error";
 
 export function ProductForm({ categories, initial, action }: { categories: any[]; initial?: any; action: (fd: FormData) => Promise<void> }) {
   const { toast } = useToast();
@@ -58,8 +59,8 @@ export function ProductForm({ categories, initial, action }: { categories: any[]
       try {
         await action(formData);
         toast(initial ? "Product updated ✓" : "Product created ✓", "success");
-      } catch (e: any) {
-        toast(e?.message || "Failed to save product", "error");
+      } catch (e) {
+        toast(friendlyActionError(e, "Failed to save product"), "error");
       }
     });
   }

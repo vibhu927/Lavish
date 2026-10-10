@@ -1,6 +1,7 @@
 "use client";
 import { useTransition } from "react";
 import { useToast } from "@/components/ui/toaster";
+import { friendlyActionError } from "@/lib/action-error";
 
 /**
  * Wraps a one-click server action (delete / toggle / status change).
@@ -31,7 +32,7 @@ export function ActionForm({
             if (confirmMessage && !window.confirm(confirmMessage)) return;
             await action();
           } catch (e) {
-            toast(e instanceof Error ? e.message : "Action failed", "error");
+            toast(friendlyActionError(e, "Action failed"), "error");
           }
         })
       }

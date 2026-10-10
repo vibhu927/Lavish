@@ -44,6 +44,10 @@ export async function GET() {
       pid: process.pid,
       cwd: process.cwd(),
       nodeEnv: process.env.NODE_ENV,
+      // Exact code running live (Vercel injects these at build). Compare with
+      // `git rev-parse HEAD` to prove which commit a deployment serves.
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
+      branch: process.env.VERCEL_GIT_COMMIT_REF || null,
       workflow: githubSync
         ? "auto-publish (live saves commit to GitHub, Vercel redeploys)"
         : "publish-by-push (edit on localhost, commit + push)",
